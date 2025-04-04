@@ -7,7 +7,8 @@ export const appInfo = {
   },
 
   // BASE_URL: "http://localhost:3000",
-  BASE_URL: "http://192.168.1.133:3000",
+  BASE_URL: "http://192.168.1.16:3000",
+  // BASE_URL: "http://192.168.2.9:3000",
   //   BASE_URL: "http://10.0.2.2:3000",
   //   192.168.1.133:8081
 };
