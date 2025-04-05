@@ -21,6 +21,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AddSchedule, ScheduleScreen } from "../view/schedule";
 import { ActivitiesScreen, AddActivities } from "../view/activities";
 import { AddChildren, Children } from "../view/children";
+import FollowAndEvaluation from "../view/followAndEvaluation/FollowAndEvaluation";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -221,6 +222,12 @@ const MainNavigator = () => {
         component={ChildrenNavigation}
         options={{ headerShown: false }}
       />
+
+      <Stack.Screen
+        name="FollowAndEvaluation"
+        component={FollowAndEvaluation}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 };
@@ -257,14 +264,14 @@ const NavigationStack = () => {
 
   return (
     <>
-      {isShowSplash ? (
+      {/* {isShowSplash ? (
         <SplashScreen />
       ) : auth.accesstoken ? (
         <MainNavigator />
       ) : (
         <AuthenNavigation />
-      )}
-      {/* <MainNavigator /> */}
+      )} */}
+      <MainNavigator />
     </>
   );
 };
