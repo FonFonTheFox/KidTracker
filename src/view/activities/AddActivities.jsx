@@ -7,6 +7,8 @@ import {
   View,
   Alert,
   FlatList,
+  TextInput,
+  Image,
 } from "react-native";
 import React, { useContext, useState, useEffect } from "react";
 import HeaderScreen from "../../components/header/HeaderScreen";
@@ -18,7 +20,6 @@ import DropDownPicker from "react-native-dropdown-picker";
 import { getToken } from "../../ultis/authHelper";
 import { appInfo } from "../../constants/appInfos";
 import { useDispatch } from "react-redux";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 const AddActivities = ({ navigation }) => {
   const theme = useContext(themeContext);
@@ -36,10 +37,11 @@ const AddActivities = ({ navigation }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState([
-    { id: 1, label: "15 phút", value: "15 phút" },
-    { id: 2, label: "30 phút", value: "30 phút" },
-    { id: 3, label: "45 phút", value: "45 phút" },
-    { id: 4, label: "60 phút", value: "60 phút" },
+    { id: 1, label: "5 phút", value: "5 phút" },
+    { id: 2, label: "10 phút", value: "10 phút" },
+    { id: 3, label: "15 phút", value: "15 phút" },
+    { id: 4, label: "20 phút", value: "20 phút" },
+    { id: 5, label: "30 phút", value: "30 phút" },
   ]);
   const [selectedTimer, setSelectedTimer] = useState(null);
 
@@ -109,44 +111,95 @@ const AddActivities = ({ navigation }) => {
     return `${hours}:${minutes}`;
   };
 
+  // const handleCreate = async () => {
+  //   if (!value || !activity || !selectedTimer) {
+  //     Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin!");
+  //     return;
+  //   }
+
+  //   try {
+  //     setLoading(true);
+  //     const token = await getToken(dispatch);
+  //     if (!token) throw new Error("Không lấy được token");
+
+  //     const endTime = new Date(startTime);
+  //     const durationMinutes = parseInt(selectedTimer.split(" ")[0], 10);
+  //     endTime.setMinutes(endTime.getMinutes() + durationMinutes);
+
+  //     const scheduleData = {
+  //       title: activity,
+  //       startTime: formatTimeString(startTime),
+  //       endTime: formatTimeString(endTime),
+  //       repeat: isExam ? "weekly" : "daily",
+  //       note: `${activity} - ${selectedTimer}`,
+  //     };
+
+  //     const response = await fetch(
+  //       `${appInfo.BASE_URL}/api/thoigianbieu/${value}`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify(scheduleData),
+  //       }
+  //     );
+
+  //     const result = await response.json();
+  //     if (!response.ok) throw new Error(result.message);
+
+  //     Alert.alert("Thành công", "Đã thêm hoạt động vào thời khóa biểu!");
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     Alert.alert("Lỗi", error.message || "Không thể tạo thời gian biểu");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const handleCreate = async () => {
     if (!value || !activity || !selectedTimer) {
       Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin!");
       return;
     }
-
+  
     try {
       setLoading(true);
       const token = await getToken(dispatch);
       if (!token) throw new Error("Không lấy được token");
-
+  
+      // Calculate the endTime based on the selectedTimer duration
       const endTime = new Date(startTime);
       const durationMinutes = parseInt(selectedTimer.split(" ")[0], 10);
       endTime.setMinutes(endTime.getMinutes() + durationMinutes);
-
+  
+      // Format the dateFrom as "dd/MM/yyyy"
+      const day = date.getDate().toString().padStart(2, "0");
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const year = date.getFullYear();
+      const formattedDateFrom = `${day}/${month}/${year}`;
+  
       const scheduleData = {
         title: activity,
         startTime: formatTimeString(startTime),
         endTime: formatTimeString(endTime),
         repeat: isExam ? "weekly" : "daily",
         note: `${activity} - ${selectedTimer}`,
+        dateFrom: formattedDateFrom, // New field added here
       };
-
-      const response = await fetch(
-        `${appInfo.BASE_URL}/api/thoigianbieu/${value}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(scheduleData),
-        }
-      );
-
+  
+      const response = await fetch(`${appInfo.BASE_URL}/api/thoigianbieu/${value}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(scheduleData),
+      });
+  
       const result = await response.json();
       if (!response.ok) throw new Error(result.message);
-
+  
       Alert.alert("Thành công", "Đã thêm hoạt động vào thời khóa biểu!");
       navigation.goBack();
     } catch (error) {
@@ -155,7 +208,7 @@ const AddActivities = ({ navigation }) => {
       setLoading(false);
     }
   };
-
+  
   return (
     <PaperProvider>
       <HeaderScreen
@@ -214,7 +267,12 @@ const AddActivities = ({ navigation }) => {
             )}
 
             <Text style={styles.textActivities}>Chọn loại hoạt động:</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+              }}
+            >
               {activities.map((item) => (
                 <TouchableOpacity
                   key={item.id.toString()}
@@ -233,9 +291,27 @@ const AddActivities = ({ navigation }) => {
                   </Text>
                 </TouchableOpacity>
               ))}
+              <TouchableOpacity
+                style={{
+                  width: 50,
+                  height: 50,
+                  marginLeft: 20,
+                  marginTop: 20,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+                onPress={() => {
+                  navigation.navigate("AddActivitiesForUser");
+                }}
+              >
+                <Image
+                  source={require("../../img/imgTab/plus.png")}
+                  style={{ resizeMode: "contain" }}
+                />
+              </TouchableOpacity>
             </View>
 
-            <View style={styles.switchRow}>
+            {/* <View style={styles.switchRow}>
               <Text style={styles.textActivities}>Lặp lại định kỳ</Text>
               <Ionicons
                 name={isWeekly ? "checkmark-circle" : "ellipse-outline"}
@@ -244,7 +320,7 @@ const AddActivities = ({ navigation }) => {
                 onPress={() => setIsWeekly(!isWeekly)}
                 style={{ marginLeft: 8 }}
               />
-            </View>
+            </View> */}
 
             <View style={styles.switchRow}>
               <View
@@ -332,6 +408,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 12,
+    borderRadius: 6,
+    marginBottom: 10,
+    marginTop: 10,
+  },
   activityItem: {
     width: 82,
     height: 82,
@@ -347,6 +431,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
+    marginTop:20
   },
   labelBox: {
     padding: 10,

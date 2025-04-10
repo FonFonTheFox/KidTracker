@@ -19,7 +19,11 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { ChatBotAI, UserManagementScreen } from "../view/tabScreen";
 import { Ionicons } from "@expo/vector-icons";
 import { AddSchedule, ScheduleScreen } from "../view/schedule";
-import { ActivitiesScreen, AddActivities } from "../view/activities";
+import {
+  ActivitiesScreen,
+  AddActivities,
+  AddActivitiesForUser,
+} from "../view/activities";
 import { AddChildren, Children } from "../view/children";
 import FollowAndEvaluation from "../view/followAndEvaluation/FollowAndEvaluation";
 
@@ -158,6 +162,11 @@ const ActivitiesNavigation = () => {
         component={AddActivities}
         options={{ headerShown: false }}
       />
+      <Stack.Screen
+        name="AddActivitiesForUser"
+        component={AddActivitiesForUser}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 };
@@ -252,7 +261,7 @@ const NavigationStack = () => {
 
   const checkLogin = async () => {
     const res = await getItem();
-    console.log("res checkLogin :", res);
+    // console.log("res checkLogin :", res);
 
     if (res) {
       dispatch(addAuth(JSON.parse(res)));
