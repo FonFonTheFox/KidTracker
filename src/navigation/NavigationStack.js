@@ -79,17 +79,21 @@ const TabNavigationContainer = () => {
           headerShown: false,
         }}
       />
-      <Tab.Screen
-        name="ManageScreen"
-        component={ManageScreen}
-        options={{
-          tabBarLabel: "Quản lý",
-          tabBarIcon: ({ color, size }) => {
-            return <Ionicons name="reader-outline" size={size} color={color} />;
-          },
-          headerShown: false,
-        }}
-      />
+      {auth.role === "admin" && (
+        <Tab.Screen
+          name="ManageUser"
+          component={ManageUser}
+          options={{
+            tabBarLabel: "QL Người Dùng",
+            tabBarIcon: ({ color, size }) => {
+              return (
+                <Ionicons name="people-outline" size={size} color={color} />
+              );
+            },
+            headerShown: false,
+          }}
+        />
+      )}
       {/* chatbot */}
       <Tab.Screen
         name="ChatBotAI"
@@ -100,18 +104,6 @@ const TabNavigationContainer = () => {
             return (
               <Ionicons name="chatbubbles-outline" size={size} color={color} />
             );
-          },
-          headerShown: false,
-        }}
-      />
-
-      <Tab.Screen
-        name="ManageUser"
-        component={ManageUser}
-        options={{
-          tabBarLabel: "QL Người Dùng",
-          tabBarIcon: ({ color, size }) => {
-            return <Ionicons name="people-outline" size={size} color={color} />;
           },
           headerShown: false,
         }}
@@ -133,16 +125,17 @@ const TabNavigationContainer = () => {
 };
 
 const ManageUser = () => {
+  const auth = useSelector(authSelector);
+
   return (
     <Stack.Navigator>
-      {/* {auth.role === "admin" && (
-       
-      )} */}
+       {auth.role === "admin" && ( 
       <Tab.Screen
         name="UserManagement"
         component={UserManagementScreen}
         options={{ headerShown: false }}
       />
+      )}
       <Stack.Screen
         name="InformationOfUser"
         component={InformationOfUser}
