@@ -28,6 +28,8 @@ import { AddChildren, Children } from "../view/children";
 import FollowAndEvaluation from "../view/followAndEvaluation/FollowAndEvaluation";
 import RankingChild from "../view/ranking/RankingChild";
 import InformationOfUser from "../view/informationOfUser/InformationOfUser";
+import DevelopThinking from "../view/developThinking/DevelopThinking";
+import AddDevelopThinking from "../view/developThinking/AddDevelopThinking";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -79,21 +81,17 @@ const TabNavigationContainer = () => {
           headerShown: false,
         }}
       />
-      {auth.role === "admin" && (
-        <Tab.Screen
-          name="ManageUser"
-          component={ManageUser}
-          options={{
-            tabBarLabel: "QL Người Dùng",
-            tabBarIcon: ({ color, size }) => {
-              return (
-                <Ionicons name="people-outline" size={size} color={color} />
-              );
-            },
-            headerShown: false,
-          }}
-        />
-      )}
+      {/* <Tab.Screen
+        name="ManageScreen"
+        component={ManageScreen}
+        options={{
+          tabBarLabel: "Quản lý",
+          tabBarIcon: ({ color, size }) => {
+            return <Ionicons name="reader-outline" size={size} color={color} />;
+          },
+          headerShown: false,
+        }}
+      /> */}
       {/* chatbot */}
       <Tab.Screen
         name="ChatBotAI"
@@ -104,6 +102,18 @@ const TabNavigationContainer = () => {
             return (
               <Ionicons name="chatbubbles-outline" size={size} color={color} />
             );
+          },
+          headerShown: false,
+        }}
+      />
+
+      <Tab.Screen
+        name="ManageUser"
+        component={ManageUser}
+        options={{
+          tabBarLabel: "QL Người Dùng",
+          tabBarIcon: ({ color, size }) => {
+            return <Ionicons name="people-outline" size={size} color={color} />;
           },
           headerShown: false,
         }}
@@ -125,17 +135,16 @@ const TabNavigationContainer = () => {
 };
 
 const ManageUser = () => {
-  const auth = useSelector(authSelector);
-
   return (
     <Stack.Navigator>
-       {auth.role === "admin" && ( 
+      {/* {auth.role === "admin" && (
+       
+      )} */}
       <Tab.Screen
         name="UserManagement"
         component={UserManagementScreen}
         options={{ headerShown: false }}
       />
-      )}
       <Stack.Screen
         name="InformationOfUser"
         component={InformationOfUser}
@@ -173,6 +182,23 @@ const ActivitiesNavigation = () => {
       <Stack.Screen
         name="AddActivities"
         component={AddActivities}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+const DevelopThinkingNavigation = () => {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="DevelopThinking"
+        component={DevelopThinking}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="AddDevelopThinking"
+        component={AddDevelopThinking}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
@@ -249,6 +275,12 @@ const MainNavigator = () => {
       <Stack.Screen
         name="RankingChild"
         component={RankingChild}
+        options={{ headerShown: false }}
+      />
+
+      <Stack.Screen
+        name="DevelopThinkingNavigation"
+        component={DevelopThinkingNavigation}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
