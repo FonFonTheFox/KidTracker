@@ -9,6 +9,7 @@ import {
   FlatList,
   TextInput,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import React, { useContext, useState, useEffect } from "react";
 import HeaderScreen from "../../components/header/HeaderScreen";
@@ -21,20 +22,66 @@ import { getToken } from "../../ultis/authHelper";
 import { appInfo } from "../../constants/appInfos";
 import { useDispatch } from "react-redux";
 
-const AddActivities = ({ navigation }) => {
+const UpdateActivities = ({ navigation, route }) => {
   const theme = useContext(themeContext);
   const dispatch = useDispatch();
-  const [date, setDate] = useState(new Date());
-  const [startTime, setStartTime] = useState(new Date());
+  const [items, setItems] = useState([]);
+  // Lấy item từ navigation params
+  const { item } = route.params || {};
+
+  console.log("item update activities:", item);
+
+  // Phân tích chuỗi thời gian từ item.start (ví dụ: "08:00")
+  const parseTimeFromString = (timeString) => {
+    if (!timeString) return new Date();
+
+    const [hours, minutes] = timeString.split(":").map(Number);
+    const time = new Date();
+    time.setHours(hours);
+    time.setMinutes(minutes);
+    return time;
+  };
+
+  // Trích xuất thời lượng từ item.duration (ví dụ: "30 phút")
+  const extractDuration = (durationStr) => {
+    if (!durationStr) return "30 phút";
+    return durationStr;
+  };
+
+  // Parse date từ dateFrom nếu có
+  const parseDateFromString = (dateFromStr) => {
+    if (!dateFromStr) return new Date();
+
+    try {
+      // Nếu định dạng là dd/MM/yyyy
+      const [day, month, year] = dateFromStr.split("/").map(Number);
+      const date = new Date(year, month - 1, day);
+      return isNaN(date.getTime()) ? new Date() : date;
+    } catch (error) {
+      // Nếu là định dạng ISO hoặc khác
+      try {
+        const date = new Date(dateFromStr);
+        return isNaN(date.getTime()) ? new Date() : date;
+      } catch (err) {
+        return new Date();
+      }
+    }
+  };
+
+  const [date, setDate] = useState(
+    item?.dateFrom ? parseDateFromString(item.dateFrom) : new Date()
+  );
+  const [selectedDate, setSelectedDate] = useState(false); // Flag to track if date was manually selected
+  const [startTime, setStartTime] = useState(
+    item?.start ? parseTimeFromString(item.start) : new Date()
+  );
   const [showDate, setShowDate] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
-  const [isExam, setIsExam] = useState(false);
-  const [isWeekly, setIsWeekly] = useState(false);
-  const [openChild, setOpenChild] = useState(false);
+  const [isExam, setIsExam] = useState(item?.repeat === "weekly");
   const [openTime, setOpenTime] = useState(false);
-  const [activity, setActivity] = useState("");
-  const [value, setValue] = useState(null);
-  const [items, setItems] = useState([]);
+  const [activity, setActivity] = useState(item?.title || "");
+  const [value, setValue] = useState(item.child);
+  
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState([
     { id: 1, label: "5 phút", value: "5 phút" },
@@ -43,8 +90,34 @@ const AddActivities = ({ navigation }) => {
     { id: 4, label: "20 phút", value: "20 phút" },
     { id: 5, label: "30 phút", value: "30 phút" },
   ]);
-  const [selectedTimer, setSelectedTimer] = useState(null);
+  const [selectedTimer, setSelectedTimer] = useState(
+    item?.duration ? extractDuration(item.duration) : null
+  );
 
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const token = await getToken(dispatch);
+        const res = await fetch(`${appInfo.BASE_URL}/api/children`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        const list = (json.data || []).map((c) => ({ label: c.name, value: c._id }));
+        setItems(list);
+      } catch {
+        Alert.alert("Lỗi", "Không thể tải danh sách trẻ");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [dispatch]);
+
+  // derive childName from items and value
+  const childName = items.find((c) => c.value === value)?.label || "";
+
+  console.log("childName:", childName);
+  
   const activities = [
     { id: 1, label: "Học tập", icon: "📘" },
     { id: 2, label: "Vệ sinh cá nhân", icon: "🧼" },
@@ -59,51 +132,8 @@ const AddActivities = ({ navigation }) => {
   ];
 
   useEffect(() => {
-    if (openChild) setOpenTime(false);
-  }, [openChild]);
-
-  useEffect(() => {
-    if (openTime) setOpenChild(false);
-  }, [openTime]);
-
-  useEffect(() => {
-    const fetchAllChild = async () => {
-      setLoading(true);
-      try {
-        const token = await getToken(dispatch);
-        if (!token) return;
-
-        const res = await fetch(`${appInfo.BASE_URL}/api/children`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await res.json();
-        const children = data.data || [];
-
-        setItems(
-          children.map((child) => ({
-            label: child.name,
-            value: child._id,
-          }))
-        );
-
-        if (children.length > 0) {
-          setValue(children[0]._id);
-        }
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách trẻ:", error.message);
-        Alert.alert("Lỗi", "Không thể tải danh sách trẻ");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllChild();
-  }, [dispatch]);
+    if (openTime) setOpenTime(false);
+  }, []);
 
   const formatTimeString = (date) => {
     const hours = date.getHours().toString().padStart(2, "0");
@@ -111,54 +141,14 @@ const AddActivities = ({ navigation }) => {
     return `${hours}:${minutes}`;
   };
 
-  // const handleCreate = async () => {
-  //   if (!value || !activity || !selectedTimer) {
-  //     Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin!");
-  //     return;
-  //   }
+  const formatDateString = (date) => {
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
-  //   try {
-  //     setLoading(true);
-  //     const token = await getToken(dispatch);
-  //     if (!token) throw new Error("Không lấy được token");
-
-  //     const endTime = new Date(startTime);
-  //     const durationMinutes = parseInt(selectedTimer.split(" ")[0], 10);
-  //     endTime.setMinutes(endTime.getMinutes() + durationMinutes);
-
-  //     const scheduleData = {
-  //       title: activity,
-  //       startTime: formatTimeString(startTime),
-  //       endTime: formatTimeString(endTime),
-  //       repeat: isExam ? "weekly" : "daily",
-  //       note: `${activity} - ${selectedTimer}`,
-  //     };
-
-  //     const response = await fetch(
-  //       `${appInfo.BASE_URL}/api/thoigianbieu/${value}`,
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify(scheduleData),
-  //       }
-  //     );
-
-  //     const result = await response.json();
-  //     if (!response.ok) throw new Error(result.message);
-
-  //     Alert.alert("Thành công", "Đã thêm hoạt động vào thời khóa biểu!");
-  //     navigation.goBack();
-  //   } catch (error) {
-  //     Alert.alert("Lỗi", error.message || "Không thể tạo thời gian biểu");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  const handleCreate = async () => {
+  const handleUpdate = async () => {
     if (!value || !activity || !selectedTimer) {
       Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin!");
       return;
@@ -174,49 +164,96 @@ const AddActivities = ({ navigation }) => {
       const durationMinutes = parseInt(selectedTimer.split(" ")[0], 10);
       endTime.setMinutes(endTime.getMinutes() + durationMinutes);
 
-      // Format the dateFrom as "dd/MM/yyyy"
-      const day = date.getDate().toString().padStart(2, "0");
-      const month = (date.getMonth() + 1).toString().padStart(2, "0");
-      const year = date.getFullYear();
-      const formattedDateFrom = `${day}/${month}/${year}`;
+      // Create a proper ISO format date - using UTC to avoid timezone issues
+      // Set time to noon to avoid timezone crossing day boundaries
+      const isoDate = new Date(date);
+      isoDate.setHours(12, 0, 0, 0);
+      
+      console.log("Original date object:", date);
+      console.log("ISO date to send:", isoDate.toISOString());
 
       const scheduleData = {
         title: activity,
         startTime: formatTimeString(startTime),
         endTime: formatTimeString(endTime),
+        duration: selectedTimer,
         repeat: isExam ? "weekly" : "daily",
         note: `${activity} - ${selectedTimer}`,
-        dateFrom: formattedDateFrom, // New field added here
+        dateFrom: isoDate.toISOString(), // Send as ISO string
       };
 
-      const response = await fetch(
-        `${appInfo.BASE_URL}/api/thoigianbieu/${value}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(scheduleData),
-        }
-      );
+      console.log("scheduleData being sent:", scheduleData);
+
+      let response;
+      if (item && item.id) {
+        // Nếu có item.id thì là update
+        response = await fetch(
+          `${appInfo.BASE_URL}/api/thoigianbieu/${item.id}`,
+          {
+            method: "PUT", // Sử dụng PUT để cập nhật
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(scheduleData),
+          }
+        );
+      } else {
+        // Nếu không có item.id thì là tạo mới
+        response = await fetch(
+          `${appInfo.BASE_URL}/api/thoigianbieu/${value}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(scheduleData),
+          }
+        );
+      }
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message);
+      console.log("API response:", result);
+      
+      if (!response.ok) throw new Error(result.message || "Cập nhật không thành công");
 
-      Alert.alert("Thành công", "Đã thêm hoạt động vào thời khóa biểu!");
+      Alert.alert(
+        "Thành công",
+        item?.id
+          ? "Đã cập nhật hoạt động!"
+          : "Đã thêm hoạt động vào thời khóa biểu!"
+      );
+      
+      // Navigate back on success
       navigation.goBack();
+      
     } catch (error) {
-      Alert.alert("Lỗi", error.message || "Không thể tạo thời gian biểu");
+      console.error("Error in handleUpdate:", error);
+      Alert.alert("Lỗi", error.message || "Không thể cập nhật thời gian biểu");
     } finally {
       setLoading(false);
     }
   };
 
+  if (loading && !items.length) {
+    return (
+      <View
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <ActivityIndicator size="large" color="#33CC66" />
+        <Text style={{ marginTop: 10 }}>Đang tải dữ liệu...</Text>
+      </View>
+    );
+  }
+
   return (
     <PaperProvider>
       <HeaderScreen
-        title="Tạo thời gian biểu mới"
+        title={item?.id ? "Cập nhật thời gian biểu" : "Tạo thời gian biểu mới"}
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
       />
@@ -224,25 +261,11 @@ const AddActivities = ({ navigation }) => {
         data={[{}]} // Truyền 1 mảng dummy để FlatList có thể render
         renderItem={() => (
           <View style={styles.container}>
-            {/* Dropdown chọn trẻ */}
-            <View style={{ zIndex: 3000 }}>
-              <Text style={{ fontSize: 16 }}>Thời khóa biểu của:</Text>
-              <DropDownPicker
-                open={openChild}
-                value={value}
-                items={items}
-                loading={loading}
-                setOpen={setOpenChild}
-                setValue={setValue}
-                setItems={setItems}
-                style={styles.dropdown}
-                containerStyle={{ width: "100%" }}
-                dropDownContainerStyle={{ borderColor: "#ccc" }}
-                placeholder="Chọn trẻ"
-                zIndex={3000}
-                zIndexInverse={1000}
-              />
-            </View>
+            {/* Phần hiển thị tên của trẻ thay vì DropDownPicker */}
+            <Text style={{ fontSize: 16 }}>
+              Thời khóa biểu của:{" "}
+              <Text style={styles.childNameText}>{childName}</Text>
+            </Text>
 
             <Text style={styles.textActivities}>
               Chọn thời gian cho hoạt động:
@@ -265,7 +288,11 @@ const AddActivities = ({ navigation }) => {
                 display="default"
                 onChange={(e, selectedDate) => {
                   setShowPicker(false);
-                  if (selectedDate) setDate(selectedDate);
+                  if (selectedDate) {
+                    setDate(selectedDate);
+                    setSelectedDate(true); // Mark that date was manually selected
+                    console.log("Date selected:", selectedDate);
+                  }
                 }}
               />
             )}
@@ -353,11 +380,11 @@ const AddActivities = ({ navigation }) => {
 
             <TouchableOpacity
               style={styles.button}
-              onPress={handleCreate}
+              onPress={handleUpdate}
               disabled={loading}
             >
               <Text style={styles.buttonText}>
-                {loading ? "ĐANG TẠO..." : "TẠO"}
+                {loading ? "ĐANG XỬ LÝ..." : item?.id ? "CẬP NHẬT" : "TẠO"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -368,7 +395,7 @@ const AddActivities = ({ navigation }) => {
   );
 };
 
-export default AddActivities;
+export default UpdateActivities;
 
 const styles = StyleSheet.create({
   container: { padding: 20, backgroundColor: "#fff", flex: 1 },
@@ -430,4 +457,13 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   buttonText: { color: "#fff", fontWeight: "bold" },
+  childInfoContainer: {
+    marginBottom: 15,
+  },
+  childNameText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 8,
+    color: "#33CC66",
+  },
 });

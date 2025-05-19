@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import themeContext from "../../context/themeContext";
 import { PaperProvider } from "react-native-paper";
 import HeaderScreen from "../../components/header/HeaderScreen";
@@ -15,6 +15,7 @@ import { getToken } from "../../ultis/authHelper";
 import { useDispatch } from "react-redux";
 import { appInfo } from "../../constants/appInfos";
 import { useFocusEffect } from "@react-navigation/native";
+import { format } from "date-fns";
 
 const Children = ({ navigation }) => {
   const theme = useContext(themeContext);
@@ -85,6 +86,7 @@ const Children = ({ navigation }) => {
 
           const data = await res.json();
           setAllChild(data.data);
+
           if (data.data.length > 0) {
             setSelectedChild(data.data[0]);
           }
@@ -154,11 +156,28 @@ const Children = ({ navigation }) => {
 
   const childItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.childItem}
+      style={{
+        width: "95%",
+        height: 125,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: "#d0d0d0",
+        marginHorizontal: 6,
+        marginVertical: 6,
+        paddingHorizontal: 12,
+        justifyContent: "center",
+      }}
       onPress={() => setSelectedChild(item)}
     >
-      <Image source={{ uri: item.avatar }} style={styles.childImage} />
-      <Text style={styles.childText}>{item.name}</Text>
+      <Text style={styles.childText}>🧑 Họ tên: {item.name}</Text>
+      <Text style={styles.childText}>
+        ⚧️ Giới tính: {item.gender === "male" ? "nam" : "nữ"}
+      </Text>
+      <Text style={styles.childText}>
+        🎂 Ngày sinh: {format(new Date(item.dateOfBirth), "dd/MM/yyyy")}
+      </Text>
+
+      <Text style={styles.childText}>🏅 Cấp bậc: {item.level}</Text>
     </TouchableOpacity>
   );
 
@@ -185,36 +204,58 @@ const Children = ({ navigation }) => {
         </View>
       ) : (
         <View style={styles.container}>
-          <View style={styles.selectedChildContainer}>
+          <View
+            style={{
+              flex: 2.5,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
             <Text style={styles.title}>Hiện tại bạn đang quản lý trẻ</Text>
             {selectedChild && (
               <View style={styles.selectedChildCard}>
-                <Image
-                  source={{ uri: selectedChild.avatar }}
-                  style={styles.selectedChildImage}
-                />
-                <Text style={styles.selectedChildName}>
+                {selectedChild.gender === "male" ? (
+                  <Image
+                    source={{ uri: "https://avatar.iran.liara.run/public/boy" }}
+                    style={styles.selectedChildImage}
+                  />
+                ) : (
+                  <Image
+                    source={{
+                      uri: "https://avatar.iran.liara.run/public/girl",
+                    }}
+                    style={styles.selectedChildImage}
+                  />
+                )}
+                <Text
+                  style={{ paddingTop: 8, fontSize: 17, fontWeight: "bold" }}
+                >
                   {selectedChild.name}
                 </Text>
               </View>
             )}
           </View>
 
-          <FlatList
-            data={allChild}
-            keyExtractor={(item) => item._id}
-            renderItem={childItem}
-            horizontal={true}
-          />
-
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={confirmDeleteChild}>
+          <View style={{ flex: 5 }}>
+            <FlatList
+              data={allChild}
+              keyExtractor={(item) => item._id}
+              renderItem={childItem}
+            />
+          </View>
+          <View style={{ flex: 2.5 }}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={confirmDeleteChild}
+            >
               <Text style={styles.buttonText}>Xóa hồ sơ trẻ hiện tại</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.button}
-              onPress={() => navigation.navigate("UpdateChildren")}
+              onPress={() =>
+                navigation.navigate("UpdateChildren", { child: selectedChild })
+              }
             >
               <Text style={styles.buttonText}>
                 Chỉnh sửa hồ sơ trẻ hiện tại
@@ -256,23 +297,24 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   container: { flex: 1, padding: 10 },
-  title: { fontSize: 20, fontWeight: "bold", marginBottom: 10 },
+  title: { fontSize: 20, fontWeight: "bold", paddingTop: 5 },
   selectedChildContainer: {
     flex: 1.5,
     alignItems: "center",
   },
   selectedChildCard: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 200,
+    height: 120,
+    borderRadius: 15,
     backgroundColor: "#fff",
-    marginTop: 5,
+    marginVertical: 10,
     justifyContent: "center",
     alignItems: "center",
+    borderColor: "#d0d0d0",
   },
   selectedChildImage: {
-    width: 60,
-    height: 60,
+    width: 80,
+    height: 80,
     resizeMode: "contain",
   },
   selectedChildName: {
@@ -296,7 +338,7 @@ const styles = StyleSheet.create({
   },
   childText: {
     fontSize: 16,
-    paddingTop: 10,
+    paddingTop: 7,
   },
   buttonContainer: {
     flex: 3,

@@ -13,18 +13,13 @@ import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import { useDispatch, useSelector } from "react-redux";
 import { authSelector } from "../redux/reducers/authReducer";
 import HomeScreen from "../view/tabScreen/HomeScreen";
-import ManageScreen from "../view/tabScreen/ManageScreen";
 import AccountScreen from "../view/tabScreen/AccountScreen";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { ChatBotAI, UserManagementScreen } from "../view/tabScreen";
 import { Ionicons } from "@expo/vector-icons";
-import { AddSchedule, ScheduleScreen } from "../view/schedule";
-import {
-  ActivitiesScreen,
-  AddActivities,
-  AddActivitiesForUser,
-} from "../view/activities";
-import { AddChildren, Children } from "../view/children";
+import { AddSchedule, ScheduleScreen ,UpdateSchedule} from "../view/schedule";
+import { ActivitiesScreen, AddActivities ,UpdateActivities} from "../view/activities";
+import { AddChildren, Children ,UpdateChildren} from "../view/children";
 import FollowAndEvaluation from "../view/followAndEvaluation/FollowAndEvaluation";
 import RankingChild from "../view/ranking/RankingChild";
 import InformationOfUser from "../view/informationOfUser/InformationOfUser";
@@ -107,17 +102,21 @@ const TabNavigationContainer = () => {
         }}
       />
 
-      <Tab.Screen
-        name="ManageUser"
-        component={ManageUser}
-        options={{
-          tabBarLabel: "QL Người Dùng",
-          tabBarIcon: ({ color, size }) => {
-            return <Ionicons name="people-outline" size={size} color={color} />;
-          },
-          headerShown: false,
-        }}
+
+      {auth.role === "admin" && (
+        <Tab.Screen
+          name="ManageUser"
+          component={ManageUser}
+          options={{
+            tabBarLabel: "QL Người Dùng",
+            tabBarIcon: ({ color, size }) => {
+              return <Ionicons name="people-outline" size={size} color={color} />;
+            },
+            headerShown: false,
+          }}
       />
+      )}
+      
 
       <Tab.Screen
         name="Account"
@@ -167,6 +166,11 @@ const ScheduleNavigation = () => {
         component={AddSchedule}
         options={{ headerShown: false }}
       />
+      <Stack.Screen
+        name="UpdateSchedule"
+        component={UpdateSchedule}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 };
@@ -182,6 +186,11 @@ const ActivitiesNavigation = () => {
       <Stack.Screen
         name="AddActivities"
         component={AddActivities}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="UpdateActivities"
+        component={UpdateActivities}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
@@ -233,6 +242,11 @@ const ChildrenNavigation = () => {
       <Stack.Screen
         name="AddChildren"
         component={AddChildren}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="UpdateChildren"
+        component={UpdateChildren}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
